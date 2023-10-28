@@ -1,0 +1,70 @@
+version: '3.9'
+services:
+  scheduler-master:
+    container_name: scheduler-master
+    restart: always
+    build:
+      dockerfile: ./Dockerfile
+      context: ./scheduler-master
+    volumes:
+      - ./scheduler-master:/app
+      - master-node-modules:/app/node_modules
+    env_file:
+      - .env
+    ports:
+      - 3000:3000
+    depends_on:
+      - mongo
+    networks:
+      - default
+
+  scheduler-worker:
+    restart: always
+    build:
+      dockerfile: ./Dockerfile
+      context: ./scheduler-worker
+    volumes:
+      - ./scheduler-worker:/app
+      - worker-node-modules:/app/node_modules
+    env_file:
+      - .env
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - scheduler-master
+    networks:
+      - default
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    restart: always
+    networks:
+      - default
+    volumes:
+      - ./mongo/data:/data/db
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    restart: always
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+    volumes:
+      - ./rabbitmq/data:/var/lib/rabbitmq
+
+
+volumes:
+  master-node-modules:
+  worker-node-modules:
