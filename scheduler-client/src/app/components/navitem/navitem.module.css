@@ -1,0 +1,26 @@
+.navItemContainer {
+    display: flex;
+    width: 100%;
+    padding: 10px;
+    color: rgba(82, 94, 108, 0.842);;
+    border-radius: 10px;
+    margin-top: 10px;
+    align-items: center;
+}
+
+.navItemContainer:not(.navIconContainerActive):hover {
+    background-color: #e6e6e6;
+    color: rgba(12, 109, 228, 0.842);
+}
+
+.navIconContainerActive {
+    background-color: rgba(184, 211, 244, 0.842);
+    color: rgba(4, 111, 243, 0.842);
+}
+
+
+.navItemIcon {
+    padding-right: 10px;
+    padding-left: 10px;
+    padding-top: 5px;
+}

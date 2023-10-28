@@ -37,6 +37,21 @@ services:
     networks:
       - default
 
+  scheduler-client:
+    container_name: scheduler-client
+    restart: always
+    build:
+      dockerfile: ./Dockerfile
+      context: ./scheduler-client
+    volumes:
+      - ./scheduler-client:/app
+    env_file:
+      - .env
+    ports:
+      - 8080:3000
+    networks:
+      - default
+
   mongo:
     image: mongo
     container_name: mongo
