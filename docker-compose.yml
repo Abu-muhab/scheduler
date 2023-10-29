@@ -5,12 +5,13 @@ services:
     restart: always
     build:
       dockerfile: ./Dockerfile
-      context: ./scheduler-master
+      context: ./scheduler
     volumes:
-      - ./scheduler-master:/app
-      - master-node-modules:/app/node_modules
+      - ./scheduler:/app
     env_file:
       - .env
+    environment:
+      SCHEDULER_NODE: master
     ports:
       - 3000:3000
     depends_on:
@@ -22,12 +23,13 @@ services:
     restart: always
     build:
       dockerfile: ./Dockerfile
-      context: ./scheduler-worker
+      context: ./scheduler
     volumes:
-      - ./scheduler-worker:/app
-      - worker-node-modules:/app/node_modules
+      - ./scheduler:/app
     env_file:
       - .env
+    environment:
+      SCHEDULER_NODE: worker
     deploy:
       replicas: 3
       restart_policy:
@@ -78,8 +80,3 @@ services:
       - RABBITMQ_DEFAULT_PASS=password
     volumes:
       - ./rabbitmq/data:/var/lib/rabbitmq
-
-
-volumes:
-  master-node-modules:
-  worker-node-modules:
