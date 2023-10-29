@@ -7,7 +7,6 @@ export default function NavItem(props: {
     link: string;
     isActive: boolean;
 }) {
-    console.log(props.title, props.isActive);
     return (
         <Link href={props.link}>
             <div className={`${styles.navItemContainer} ${props.isActive ? styles.navIconContainerActive : ''}`}>

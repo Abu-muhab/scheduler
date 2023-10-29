@@ -1,0 +1,21 @@
+.worker-card-body{
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.worker-card-body p {
+    font-size: 0.7rem;
+}
+
+.worker-card-body h1 {
+    color: rgba(4, 111, 243, 0.842);;
+}
+
+.worker-card-footer span {
+    font-size: 0.7rem;
+}
+
+.worker-card-footer span  span{
+    font-size: 0.7rem;
+    font-weight: bold;
+}

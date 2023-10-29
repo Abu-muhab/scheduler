@@ -5,8 +5,8 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
 import SideBar from './components/sidebar/sidebar'
-import { VscArchive } from 'react-icons/vsc'
-import { FaBeer } from 'react-icons/fa'
+import { FaTasks } from 'react-icons/fa'
+import { RxDashboard } from 'react-icons/rx'
 import styles from './page.module.css';
 import { useSelectedLayoutSegment } from 'next/navigation'
 
@@ -15,7 +15,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export enum Page {
   dashboard = "dashboard",
-  jobs = "jobs"
+  jobs = "jobs",
 }
 
 export namespace Page {
@@ -48,13 +48,13 @@ export default function RootLayout({
           <SideBar activePage={activePage} navItems={[
             {
               page: Page.dashboard,
-              icon: <FaBeer />,
+              icon: <RxDashboard />,
               link: "/"
             },
             {
               page: Page.jobs,
-              icon: <VscArchive />,
-              link: "/jobs"
+              icon: <FaTasks />,
+              link: `/${Page.jobs}`
             },
           ]}>
             {children}
