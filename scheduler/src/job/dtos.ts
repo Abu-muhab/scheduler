@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { JobType } from './domain';
+import { ApiProperty, PickType } from '@nestjs/swagger';
+import { Job, JobType } from './domain';
 import { IsNotEmpty, isNotEmpty } from 'class-validator';
 
 export class MessageResponse {
@@ -14,14 +14,10 @@ export class JobDataDto {
 
   @ApiProperty()
   @IsNotEmpty()
-  data: string;
+  data: any;
 }
 
 export class JobDto {
-  @ApiProperty()
-  @IsNotEmpty()
-  ownerId: string;
-
   @ApiProperty()
   id: string;
 
@@ -42,4 +38,24 @@ export class JobDto {
   @ApiProperty()
   @IsNotEmpty()
   data: JobDataDto;
+
+  static fromDomain(job: Job): JobDto {
+    return {
+      id: job.id,
+      jobType: job.jobType,
+      interval: job.interval,
+      scheduledTime: job.scheduledTime,
+      data: {
+        name: job.data.name,
+        data: job.data.data,
+      },
+    };
+  }
 }
+
+export class CreateJobRequest extends PickType(JobDto, [
+  'jobType',
+  'interval',
+  'scheduledTime',
+  'data',
+] as const) {}

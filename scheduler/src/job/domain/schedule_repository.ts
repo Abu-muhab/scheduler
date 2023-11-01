@@ -5,7 +5,7 @@ export abstract class JobScheduleRepository {
   abstract update(scheduledJob: JobSchedule): Promise<void>;
   abstract findById(jobId: string): Promise<JobSchedule>;
   abstract add(newSchedule: JobSchedule): Promise<void>;
-  abstract getDueSchedulesByShard(
+  abstract getDueScheduledJobs(
     shard: number,
     timestamp: number,
   ): Promise<JobSchedule[]>;

@@ -1,3 +1,6 @@
+import { HttpException, HttpStatus } from '@nestjs/common';
+import { RequiredPropertyException } from './exceptions';
+
 export enum JobType {
   RECURRING = 'recurring',
   ONE_TIME = 'one-time',
@@ -10,7 +13,7 @@ export namespace JobType {
     } else if (value === JobType.ONE_TIME) {
       return JobType.ONE_TIME;
     } else {
-      throw new Error('Invalid JobType');
+      throw new HttpException('Invalid JobType', HttpStatus.BAD_REQUEST);
     }
   }
 }
@@ -30,7 +33,7 @@ export class JobData {
 
   private set name(value: string) {
     if (!value) {
-      throw new Error('Name is required');
+      throw new RequiredPropertyException('job.data.name');
     }
     this._name = value;
   }
@@ -40,47 +43,36 @@ export class JobData {
   }
 
   private set data(value: any) {
-    if (!value) {
-      throw new Error('Data is required');
+    if (value === undefined || value === null) {
+      throw new RequiredPropertyException('job.data.data');
     }
     this._data = value;
   }
 }
 
 export class Job {
-  private _ownerId: string;
   private _id: string;
   private _jobType: JobType;
   private _interval: number;
+  private _scheduledTime?: Date;
   private _data: JobData;
 
   constructor(params: {
-    ownerId: string;
     id: string;
     jobType: JobType;
     interval: number;
+    scheduledTime?: Date;
     data: JobData;
   }) {
-    this.ownerId = params.ownerId;
     this.id = params.id;
     this.jobType = params.jobType;
     this.interval = params.interval;
+    this.scheduledTime = params.scheduledTime;
     this.data = params.data;
 
     if (this.jobType === JobType.RECURRING && !this.interval) {
-      throw new Error('Interval is required for recurring jobs');
+      throw new RequiredPropertyException('interval');
     }
-  }
-
-  get ownerId(): string {
-    return this._ownerId;
-  }
-
-  private set ownerId(value: string) {
-    if (!value) {
-      throw new Error('OwnerId is required');
-    }
-    this._ownerId = value;
   }
 
   get id(): string {
@@ -89,7 +81,7 @@ export class Job {
 
   private set id(value: string) {
     if (!value) {
-      throw new Error('Id is required');
+      throw new RequiredPropertyException('id');
     }
     this._id = value;
   }
@@ -100,7 +92,7 @@ export class Job {
 
   private set jobType(value: JobType) {
     if (!value) {
-      throw new Error('JobType is required');
+      throw new RequiredPropertyException('jobType');
     }
 
     this._jobType = value;
@@ -111,7 +103,21 @@ export class Job {
   }
 
   private set interval(value: number) {
+    if (value < 60) {
+      throw new HttpException(
+        'interval must be equal to or greater than 60 seconds',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
     this._interval = value;
+  }
+
+  get scheduledTime(): Date {
+    return this._scheduledTime;
+  }
+
+  private set scheduledTime(value: Date) {
+    this._scheduledTime = value;
   }
 
   get data(): JobData {
@@ -119,8 +125,8 @@ export class Job {
   }
 
   private set data(value: JobData) {
-    if (!value) {
-      throw new Error('Data is required');
+    if (value === undefined || value === null) {
+      throw new RequiredPropertyException('data');
     }
     this._data = value;
   }

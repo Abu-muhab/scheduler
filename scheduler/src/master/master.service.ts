@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import { Cron } from '@nestjs/schedule';
 import { catchError, of } from 'rxjs';
@@ -8,7 +8,7 @@ import { Worker } from '../worker/worker';
 const workerCountTrend: number[] = [];
 const workerQueueDispatchCount: Map<string, number> = new Map();
 let workers: Worker[] = [];
-export const assignableShardLength = 1;
+export const assignableShardLength = 5;
 const shardStatus: Map<number, boolean> = new Map();
 
 //initialize shard status
@@ -169,62 +169,14 @@ export class MasterService {
           },
         });
         await client.connect();
-
         for (let shard of worker.shards) {
+          Logger.log(
+            `dispatching queue command to worker ${worker.id} for shard ${shard}`,
+          );
+
           client
             .send<number>(
               { cmd: 'queueJobs' },
-              {
-                shard,
-                timestamp: getUnixTimeStampMuniteGranularity(new Date()),
-              },
-            )
-            .pipe(
-              catchError((e) => {
-                console.log(e);
-                return of(false);
-              }),
-            )
-            .subscribe((response) => {
-              if (response) {
-                this.addWorkerQueueDispatchCount(worker.id, response as number);
-              }
-            });
-        }
-
-        setTimeout(() => {
-          client.close();
-        }, 5000);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-  @Cron('*/45 * * * * *')
-  async dispatchRequeueWorkCommand() {
-    try {
-      const activeWorkers = workers.filter(
-        (worker) => worker.shards.length > 0,
-      );
-
-      for (let worker of activeWorkers) {
-        const client = ClientProxyFactory.create({
-          transport: Transport.RMQ,
-          options: {
-            urls: [process.env.AMPQ_URL],
-            queue: `${worker.id}-queue`,
-            queueOptions: {
-              durable: false,
-            },
-          },
-        });
-        await client.connect();
-
-        for (let shard of worker.shards) {
-          client
-            .send<number>(
-              { cmd: 'requeueJobs' },
               {
                 shard,
                 timestamp: getUnixTimeStampMuniteGranularity(new Date()),

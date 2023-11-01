@@ -49,13 +49,13 @@ export class JobScheduleRepositoryImpl extends JobScheduleRepository {
     return jobScheduleDocs.map((doc) => this.mapper.toDomain(doc));
   }
 
-  async getDueSchedulesByShard(
+  async getDueScheduledJobs(
     shard: number,
     timestamp: number,
   ): Promise<JobSchedule[]> {
     const jobScheduleDocs = await JobScheduleModel.find({
       shard,
-      nextExecution: timestamp,
+      nextExecution: { $lte: timestamp },
       queued: false,
     });
     return jobScheduleDocs.map((doc) => this.mapper.toDomain(doc));

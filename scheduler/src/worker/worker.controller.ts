@@ -13,12 +13,4 @@ export class JobQueueController {
   }): Promise<number> {
     return await this.queueService.queueJobsByShard(params);
   }
-
-  @MessagePattern({ cmd: 'requeueJobs' })
-  async requeueJobs(params: {
-    shard: number;
-    timestamp: number;
-  }): Promise<number> {
-    return await this.queueService.reQueueMissedJobs(params);
-  }
 }

@@ -26,14 +26,7 @@ export class JobQueueService {
     @Inject('WORKER_MANAGER') private client: ClientProxy,
   ) {}
 
-  async ququeJobs(
-    scheduledJobs: JobSchedule[],
-    options?: {
-      requeueOptions?: {
-        timestamp?: number;
-      };
-    },
-  ) {
+  async ququeJobs(scheduledJobs: JobSchedule[], timestamp: number) {
     //push each job to queue
     for (let scheduledJob of scheduledJobs) {
       //get the job
@@ -55,9 +48,7 @@ export class JobQueueService {
           id: randomUUID(),
           shard: scheduledJob.shard,
           jobId: scheduledJob.jobId,
-          nextExecution:
-            (options?.requeueOptions?.timestamp || scheduledJob.nextExecution) +
-            job.interval,
+          nextExecution: timestamp + job.interval,
         });
         await this.jobScheduleRepository.add(newSchedule);
       }
@@ -70,36 +61,13 @@ export class JobQueueService {
   }): Promise<number> {
     try {
       const scheduledJobs =
-        await this.jobScheduleRepository.getDueSchedulesByShard(
+        await this.jobScheduleRepository.getDueScheduledJobs(
           params.shard,
           params.timestamp,
         );
 
-      await this.ququeJobs(scheduledJobs);
+      await this.ququeJobs(scheduledJobs, params.timestamp);
 
-      return scheduledJobs.length;
-    } catch (e) {
-      console.log(e);
-      return 0;
-    }
-  }
-
-  async reQueueMissedJobs(params: {
-    shard: number;
-    timestamp: number;
-  }): Promise<number> {
-    try {
-      const scheduledJobs =
-        await this.jobScheduleRepository.getMissedSchedulesByShard(
-          params.shard,
-          params.timestamp,
-        );
-
-      await this.ququeJobs(scheduledJobs, {
-        requeueOptions: {
-          timestamp: params.timestamp,
-        },
-      });
       return scheduledJobs.length;
     } catch (e) {
       console.log(e);

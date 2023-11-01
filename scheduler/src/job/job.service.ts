@@ -7,6 +7,7 @@ import {
   getUnixTimeStampMuniteGranularity,
 } from './util';
 import { randomUUID } from 'crypto';
+import { RequiredPropertyException } from './domain/exceptions';
 
 @Injectable()
 export class JobService {
@@ -16,7 +17,6 @@ export class JobService {
   ) {}
 
   async createJob(params: {
-    ownerId: string;
     jobType: string;
     interval: number;
     scheduledTime?: Date;
@@ -24,51 +24,47 @@ export class JobService {
       name: string;
       data: any;
     };
-  }): Promise<void> {
-    try {
-      let jobType = JobType.fromString(params.jobType);
-      if (jobType == JobType.ONE_TIME && !params.scheduledTime) {
-        throw new Error('Scheduled time is required for one time job');
-      }
-      if (!params.data) {
-        throw new Error('Job data is required');
-      }
-
-      const job = new Job({
-        ownerId: params.ownerId,
-        jobType: jobType,
-        interval: params.interval,
-        id: randomUUID(),
-        data: new JobData({
-          name: params.data.name,
-          data: params.data.data,
-        }),
-      });
-      await this.jobRepository.add(job);
-
-      if (jobType == JobType.RECURRING) {
-        const jobSchedule = new JobSchedule({
-          jobId: job.id,
-          nextExecution: getUnixTimeStampMuniteGranularity(
-            new Date(Date.now() + params.interval * 1000),
-          ),
-          id: randomUUID(),
-        });
-        await this.jobScheduleRepository.add(jobSchedule);
-      } else {
-        const jobSchedule = new JobSchedule({
-          jobId: job.id,
-          nextExecution: getUnixTimeStampMuniteGranularity(
-            convertToServerTimeZone(new Date(params.scheduledTime)),
-          ),
-          id: randomUUID(),
-        });
-        await this.jobScheduleRepository.add(jobSchedule);
-      }
-    } catch (err) {
-      console.log('err', err);
-      throw err;
+  }): Promise<Job> {
+    let jobType = JobType.fromString(params.jobType);
+    if (jobType == JobType.ONE_TIME && !params.scheduledTime) {
+      throw new RequiredPropertyException('scheduledTime');
     }
+    if (!params.data) {
+      throw new RequiredPropertyException('data');
+    }
+
+    const job = new Job({
+      jobType: jobType,
+      interval: params.interval,
+      id: randomUUID(),
+      scheduledTime: params.scheduledTime,
+      data: new JobData({
+        name: params.data.name,
+        data: params.data.data,
+      }),
+    });
+    await this.jobRepository.add(job);
+
+    if (jobType == JobType.RECURRING) {
+      const jobSchedule = new JobSchedule({
+        jobId: job.id,
+        nextExecution: getUnixTimeStampMuniteGranularity(
+          new Date(Date.now() + params.interval * 1000),
+        ),
+        id: randomUUID(),
+      });
+      await this.jobScheduleRepository.add(jobSchedule);
+    } else {
+      const jobSchedule = new JobSchedule({
+        jobId: job.id,
+        nextExecution: getUnixTimeStampMuniteGranularity(
+          convertToServerTimeZone(new Date(params.scheduledTime)),
+        ),
+        id: randomUUID(),
+      });
+      await this.jobScheduleRepository.add(jobSchedule);
+    }
+    return job;
   }
 
   async markScheduledJobAsQueued(jobId: string): Promise<void> {

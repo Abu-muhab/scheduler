@@ -1,35 +1,35 @@
-import { Body, Controller, Delete, Post, Query } from '@nestjs/common';
+import { Body, Controller, Post } from '@nestjs/common';
 import { JobService } from './job.service';
-import { ApiCreatedResponse } from '@nestjs/swagger';
-import { JobDto, MessageResponse } from './dtos';
-import { MessagePattern } from '@nestjs/microservices';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CreateJobRequest, JobDto } from './dtos';
 
-@Controller()
+@Controller('jobs')
+@ApiTags('Job')
 export class JobController {
   constructor(private jobService: JobService) {}
 
-  @MessagePattern({ cmd: 'createJob' })
-  async createJob(body: any): Promise<boolean> {
-    try {
-      await this.jobService.createJob({
-        ownerId: body.ownerId,
-        jobType: body.jobType,
-        interval: body.interval,
-        scheduledTime: body.scheduledTime,
-        data: {
-          name: body.data.name,
-          data: body.data.data,
-        },
-      });
-
-      return true;
-    } catch (err) {
-      console.log(err);
-      return false;
-    }
+  @Post()
+  @ApiOperation({
+    summary: 'Create a job',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'The job has been successfully created.',
+    type: JobDto,
+  })
+  async createJob(@Body() request: CreateJobRequest): Promise<JobDto> {
+    const job = await this.jobService.createJob({
+      jobType: request.jobType,
+      interval: request.interval,
+      scheduledTime: request.scheduledTime,
+      data: {
+        name: request.data.name,
+        data: request.data.data,
+      },
+    });
+    return JobDto.fromDomain(job);
   }
 
-  @MessagePattern({ cmd: 'deleteJob' })
   async deleteJob(query: any): Promise<boolean> {
     try {
       await this.jobService.deleteJob(query);
@@ -40,7 +40,6 @@ export class JobController {
     }
   }
 
-  @MessagePattern({ cmd: 'jobExists' })
   async getJob(query: any): Promise<boolean> {
     try {
       const job = await this.jobService.getJob(query);
