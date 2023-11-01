@@ -1,12 +1,19 @@
 export class Worker {
   private _id: string;
   private _lastHeartbeat: Date;
+  private _connectedAt: Date;
   private _shards: number[];
 
-  constructor(params: { id: string; lastHeartbeat: Date; shards: number[] }) {
+  constructor(params: {
+    id: string;
+    lastHeartbeat: Date;
+    shards: number[];
+    connectedAt: Date;
+  }) {
     this.id = params.id;
     this.lastHeartbeat = params.lastHeartbeat;
     this.shards = params.shards;
+    this.connectedAt = params.connectedAt;
   }
 
   get id(): string {
@@ -26,6 +33,18 @@ export class Worker {
 
   private set lastHeartbeat(value: Date) {
     this._lastHeartbeat = value;
+  }
+
+  get connectedAt(): Date {
+    return this._connectedAt;
+  }
+
+  private set connectedAt(value: Date) {
+    this._connectedAt = value;
+  }
+
+  public get uptime(): number {
+    return (new Date().getTime() - this.connectedAt.getTime()) / 1000;
   }
 
   get shards(): number[] {

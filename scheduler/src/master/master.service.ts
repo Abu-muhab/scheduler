@@ -18,6 +18,10 @@ for (let i = 1; i <= assignableShardLength; i++) {
 export class MasterService {
   constructor() {}
 
+  async getWorkers(): Promise<Worker[]> {
+    return workers;
+  }
+
   addWorker(params: { id: string }): Promise<Worker> {
     return new Promise((resolve, reject) => {
       //wait for a random time beween 200 miliseconds and 1 second
@@ -32,6 +36,7 @@ export class MasterService {
           const newWorker = new Worker({
             id: params.id,
             lastHeartbeat: new Date(),
+            connectedAt: new Date(),
             shards: [],
           });
 
