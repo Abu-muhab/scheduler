@@ -1,7 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { MasterService } from './master.service';
-import { WorkerDto } from '../worker/worker.dto';
+import { GetWorkersResponse, WorkerDto } from '../worker/worker.dto';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller()
@@ -31,9 +31,13 @@ export class MasterController {
 
   @Get('workers')
   @ApiOperation({ summary: 'Get all workers' })
-  @ApiResponse({ status: 200, type: WorkerDto, isArray: true })
-  async getWorkers(): Promise<WorkerDto[]> {
+  @ApiResponse({ status: 200, type: GetWorkersResponse, isArray: true })
+  async getWorkers(): Promise<GetWorkersResponse> {
     const workers = await this.masterService.getWorkers();
-    return workers.map(WorkerDto.fromDomain);
+
+    return {
+      workers: workers.map(WorkerDto.fromDomain),
+      workerCountTrend: this.masterService.getWorkerCountTrend(),
+    };
   }
 }

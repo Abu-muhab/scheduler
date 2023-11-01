@@ -5,7 +5,10 @@ export interface Worker {
 }
 
 class WorkersRepository {
-  async getWorkers(): Promise<Worker[]> {
+  async getWorkers(): Promise<{
+    workers: Worker[];
+    workerCountTrend: number[];
+  }> {
     const response = await fetch(`${process.env.SERVER_URL}/workers`, {
       cache: 'no-cache',
     });
@@ -14,8 +17,7 @@ class WorkersRepository {
       throw new Error('Failed to fetch data');
     }
 
-    const workers = await response.json();
-    return workers;
+    return response.json();
   }
 }
 

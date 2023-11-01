@@ -5,6 +5,7 @@ import { catchError, of } from 'rxjs';
 import { getUnixTimeStampMuniteGranularity } from 'src/job/util';
 import { Worker } from '../worker/worker';
 
+const workerCountTrend: number[] = [];
 let workers: Worker[] = [];
 export const assignableShardLength = 1;
 const shardStatus: Map<number, boolean> = new Map();
@@ -43,6 +44,8 @@ export class MasterService {
           workers.push(newWorker);
           let shard = this.getNextShard();
           this.assignShard(newWorker.id, shard);
+
+          this.updateWorkerLengthTrend();
 
           resolve(newWorker);
         } catch (e) {
@@ -112,6 +115,8 @@ export class MasterService {
     workers = workers.filter(
       (worker) => !deadWorkers.map((w) => w.id).includes(worker.id),
     );
+
+    this.updateWorkerLengthTrend();
   }
 
   @Cron('*/5 * * * * *')
@@ -236,5 +241,16 @@ export class MasterService {
     } catch (e) {
       console.log(e);
     }
+  }
+
+  updateWorkerLengthTrend() {
+    workerCountTrend.push(workers.length);
+    if (workerCountTrend.length > 10) {
+      workerCountTrend.shift();
+    }
+  }
+
+  getWorkerCountTrend(): number[] {
+    return workerCountTrend;
   }
 }

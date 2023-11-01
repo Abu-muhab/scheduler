@@ -8,13 +8,13 @@ import { workersRepository, Worker } from './data/workers.repo';
 
 
 export default async function Dashboard() {
-  let workers: Worker[] = await workersRepository.getWorkers();
+  let { workers, workerCountTrend } = await workersRepository.getWorkers();
 
 
   return <div className='column' style={{ backgroundColor: '#F6F3F3', padding: '20px', gap: '20px' }}>
     <div className='flex-2 row' style={{ gap: '20px' }}>
       <div className='flex-1 card no-elevation' >
-        <WorkerTrendChart />
+        <WorkerTrendChart workerCountTrend={workerCountTrend} />
       </div>
       <div className='flex-1 wrap' style={{ overflow: 'scroll' }}>
         {

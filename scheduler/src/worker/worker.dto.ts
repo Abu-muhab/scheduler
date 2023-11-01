@@ -24,3 +24,11 @@ export class WorkerDto {
     };
   }
 }
+
+export class GetWorkersResponse {
+  @ApiProperty()
+  workers: WorkerDto[];
+
+  @ApiProperty()
+  workerCountTrend: number[];
+}
