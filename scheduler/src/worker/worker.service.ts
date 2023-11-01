@@ -4,8 +4,8 @@ import { randomUUID } from 'crypto';
 import {
   Job,
   JobRepository,
-  JobSchedule,
-  JobScheduleRepository,
+  ScheduledJob,
+  ScheduledJobRepository,
   JobService,
   JobType,
 } from '../job';
@@ -19,14 +19,14 @@ export let workerId = randomUUID();
 @Injectable()
 export class JobQueueService {
   constructor(
-    private jobScheduleRepository: JobScheduleRepository,
+    private jobScheduleRepository: ScheduledJobRepository,
     private jobRepository: JobRepository,
     protected amqpConnection: AmqpConnection,
     private jobService: JobService,
     @Inject('WORKER_MANAGER') private client: ClientProxy,
   ) {}
 
-  async ququeJobs(scheduledJobs: JobSchedule[], timestamp: number) {
+  async ququeJobs(scheduledJobs: ScheduledJob[], timestamp: number) {
     //push each job to queue
     for (let scheduledJob of scheduledJobs) {
       //get the job
@@ -44,7 +44,7 @@ export class JobQueueService {
 
       //create the next schedule if the job is recurring
       if (job.jobType == JobType.RECURRING) {
-        const newSchedule = new JobSchedule({
+        const newSchedule = new ScheduledJob({
           id: randomUUID(),
           shard: scheduledJob.shard,
           jobId: scheduledJob.jobId,

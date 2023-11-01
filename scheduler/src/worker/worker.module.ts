@@ -6,11 +6,11 @@ import { JobQueueController } from './worker.controller';
 import {
   JobService,
   JobMapper,
-  JobScheduleMapper,
+  ScheduledJobMapper,
   JobRepository,
   JobRepositoryImpl,
-  JobScheduleRepository,
-  JobScheduleRepositoryImpl,
+  ScheduledJobRepository,
+  ScheduledJobRepositoryImpl,
 } from '../job';
 import { JobQueueService } from './worker.service';
 
@@ -49,7 +49,7 @@ import { JobQueueService } from './worker.service';
 
     //mappers
     JobMapper,
-    JobScheduleMapper,
+    ScheduledJobMapper,
 
     //repos
     {
@@ -57,8 +57,8 @@ import { JobQueueService } from './worker.service';
       useClass: JobRepositoryImpl,
     },
     {
-      provide: JobScheduleRepository,
-      useClass: JobScheduleRepositoryImpl,
+      provide: ScheduledJobRepository,
+      useClass: ScheduledJobRepositoryImpl,
     },
   ],
 })

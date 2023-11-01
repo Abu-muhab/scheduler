@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { JobSchedule } from '../domain/job_schedule';
-import { JobScheduleDocument } from './schedule_repo_impl';
+import { ScheduledJob } from '../domain/job_schedule';
+import { ScheduledJobDocument } from './schedule_repo_impl';
 
 @Injectable()
-export class JobScheduleMapper {
-  toPersistence(entity: JobSchedule): JobScheduleDocument {
+export class ScheduledJobMapper {
+  toPersistence(entity: ScheduledJob): ScheduledJobDocument {
     if (!entity) {
       return null;
     }
@@ -17,12 +17,12 @@ export class JobScheduleMapper {
       queued: entity.queued,
     };
   }
-  toDomain(document: JobScheduleDocument): JobSchedule {
+  toDomain(document: ScheduledJobDocument): ScheduledJob {
     if (!document) {
       return null;
     }
 
-    return new JobSchedule({
+    return new ScheduledJob({
       jobId: document.jobId,
       nextExecution: document.nextExecution,
       id: document.id,

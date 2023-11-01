@@ -1,19 +1,19 @@
-import { JobSchedule } from './job_schedule';
+import { ScheduledJob } from './job_schedule';
 
-export abstract class JobScheduleRepository {
-  abstract delete(schedule: JobSchedule): Promise<void>;
-  abstract update(scheduledJob: JobSchedule): Promise<void>;
-  abstract findById(jobId: string): Promise<JobSchedule>;
-  abstract add(newSchedule: JobSchedule): Promise<void>;
+export abstract class ScheduledJobRepository {
+  abstract delete(schedule: ScheduledJob): Promise<void>;
+  abstract update(scheduledJob: ScheduledJob): Promise<void>;
+  abstract findById(jobId: string): Promise<ScheduledJob>;
+  abstract add(newSchedule: ScheduledJob): Promise<void>;
   abstract getDueScheduledJobs(
     shard: number,
     timestamp: number,
-  ): Promise<JobSchedule[]>;
+  ): Promise<ScheduledJob[]>;
 
   abstract getMissedSchedulesByShard(
     shard: number,
     timestamp: number,
-  ): Promise<JobSchedule[]>;
+  ): Promise<ScheduledJob[]>;
 
-  abstract getSchedulesByJobId(jobId: string): Promise<JobSchedule[]>;
+  abstract getSchedulesByJobId(jobId: string): Promise<ScheduledJob[]>;
 }

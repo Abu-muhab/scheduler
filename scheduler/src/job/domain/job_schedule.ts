@@ -1,6 +1,6 @@
 import { assignableShardLength } from 'src/master/master.service';
 
-export class JobSchedule {
+export class ScheduledJob {
   private _id: string;
   private _jobId: string;
   private _nextExecution: number;

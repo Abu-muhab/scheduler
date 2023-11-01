@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Job, JobData, JobRepository, JobType } from './domain';
-import { JobSchedule } from './domain/job_schedule';
-import { JobScheduleRepository } from './domain/schedule_repository';
+import { ScheduledJob } from './domain/job_schedule';
+import { ScheduledJobRepository } from './domain/schedule_repository';
 import {
   convertToServerTimeZone,
   getUnixTimeStampMuniteGranularity,
@@ -13,7 +13,7 @@ import { RequiredPropertyException } from './domain/exceptions';
 export class JobService {
   constructor(
     private jobRepository: JobRepository,
-    private jobScheduleRepository: JobScheduleRepository,
+    private jobScheduleRepository: ScheduledJobRepository,
   ) {}
 
   async createJob(params: {
@@ -46,7 +46,7 @@ export class JobService {
     await this.jobRepository.add(job);
 
     if (jobType == JobType.RECURRING) {
-      const jobSchedule = new JobSchedule({
+      const jobSchedule = new ScheduledJob({
         jobId: job.id,
         nextExecution: getUnixTimeStampMuniteGranularity(
           new Date(Date.now() + params.interval * 1000),
@@ -55,7 +55,7 @@ export class JobService {
       });
       await this.jobScheduleRepository.add(jobSchedule);
     } else {
-      const jobSchedule = new JobSchedule({
+      const jobSchedule = new ScheduledJob({
         jobId: job.id,
         nextExecution: getUnixTimeStampMuniteGranularity(
           convertToServerTimeZone(new Date(params.scheduledTime)),
