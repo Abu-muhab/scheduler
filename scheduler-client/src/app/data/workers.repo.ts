@@ -11,9 +11,17 @@ class WorkersRepository {
     workers: Worker[];
     workerCountTrend: number[];
   }> {
-    const response = await fetch(`${process.env.SERVER_URL}/workers`, {
-      cache: 'no-cache',
-    });
+    console.log(
+      `fetching workers from ${
+        process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL
+      }/workers`,
+    );
+    const response = await fetch(
+      `${process.env.SERVER_URL || process.env.NEXT_PUBLIC_SERVER_URL}/workers`,
+      {
+        cache: 'no-cache',
+      },
+    );
 
     if (!response.ok) {
       throw new Error('Failed to fetch data');
