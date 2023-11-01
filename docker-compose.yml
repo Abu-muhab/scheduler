@@ -31,7 +31,7 @@ services:
     environment:
       SCHEDULER_NODE: worker
     deploy:
-      replicas: 3
+      replicas: 6
       restart_policy:
         condition: on-failure
     depends_on:

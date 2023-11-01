@@ -25,7 +25,7 @@ export default async function Dashboard() {
       </div>
     </div>
     <div className='flex-2 card no-elevation'>
-      <WorkerWorkloadsChart />
+      <WorkerWorkloadsChart workers={workers} />
     </div>
   </div>
 }

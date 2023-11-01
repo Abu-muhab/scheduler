@@ -15,12 +15,16 @@ export class WorkerDto {
   @ApiProperty()
   uptime: string;
 
-  static fromDomain(worker: Worker): WorkerDto {
+  @ApiProperty()
+  queueDispatchCount: number;
+
+  static fromDomain(worker: Worker, queueDispatchCount: number): WorkerDto {
     return {
       id: worker.id,
       lastHeartbeat: dateToTimeAgo(worker.lastHeartbeat),
       shards: worker.shards,
       uptime: secondsToTimeAgo(worker.uptime),
+      queueDispatchCount: queueDispatchCount,
     };
   }
 }

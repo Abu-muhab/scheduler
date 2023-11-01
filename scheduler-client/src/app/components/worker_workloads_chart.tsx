@@ -1,8 +1,11 @@
 "use client"
 
 import Chart from "react-google-charts";
+import { Worker } from "../data/workers.repo";
 
-export default function WorkerWorkloadsChart() {
+export default function WorkerWorkloadsChart(params: {
+    workers: Worker[]
+}) {
     const data = [
         [
             "Element",
@@ -15,14 +18,19 @@ export default function WorkerWorkloadsChart() {
                 calc: "stringify",
             },
         ],
-        ["Copper", 8.94, "#b87333", null],
-        ["Silver", 10.49, "silver", null],
-        ["Gold", 19.3, "gold", null],
-        ["Platinum", 21.45, "color: #e5e4e2", null],
+        ...params.workers.map(worker => {
+            return [
+                worker.id.split('-')[0],
+                worker.queueDispatchCount,
+                `color: ${getRandomDarkColor()}`,
+                null,
+            ];
+        }
+        )
     ];
 
     const options = {
-        title: "Queued items per worker",
+        title: "Queued jobs per worker",
         bar: { groupWidth: "95%" },
         legend: { position: "none" },
         vAxis: { title: "Workers" }, // Label for the X-axis
@@ -38,4 +46,16 @@ export default function WorkerWorkloadsChart() {
             options={options}
         />
     );
+}
+
+
+const getRandomDarkColor = () => {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    var i = 0;
+    while (i < 3) {
+        color += letters[Math.floor(Math.random() * 16)];
+        i++;
+    }
+    return color;
 }

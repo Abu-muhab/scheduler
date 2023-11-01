@@ -26,7 +26,7 @@ export default function Workercard(props: {
                 </h1>
             </section>
             <section className={`row ${styles['worker-card-footer']}`}>
-                <span>Uptime:<span> {props.worker.uptime} ago</span></span>
+                <span>Uptime:<span> {props.worker.uptime}</span></span>
                 <span>Heartbeat:<span> {props.worker.lastHeartbeat} ago</span></span>
             </section>
         </div>

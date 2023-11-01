@@ -10,7 +10,7 @@ export class JobQueueController {
   async queueJobs(params: {
     shard: number;
     timestamp: number;
-  }): Promise<boolean> {
+  }): Promise<number> {
     return await this.queueService.queueJobsByShard(params);
   }
 
@@ -18,7 +18,7 @@ export class JobQueueController {
   async requeueJobs(params: {
     shard: number;
     timestamp: number;
-  }): Promise<boolean> {
+  }): Promise<number> {
     return await this.queueService.reQueueMissedJobs(params);
   }
 }

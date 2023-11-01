@@ -67,7 +67,7 @@ export class JobQueueService {
   async queueJobsByShard(params: {
     shard: number;
     timestamp: number;
-  }): Promise<boolean> {
+  }): Promise<number> {
     try {
       const scheduledJobs =
         await this.jobScheduleRepository.getDueSchedulesByShard(
@@ -77,17 +77,17 @@ export class JobQueueService {
 
       await this.ququeJobs(scheduledJobs);
 
-      return true;
+      return scheduledJobs.length;
     } catch (e) {
       console.log(e);
-      return false;
+      return 0;
     }
   }
 
   async reQueueMissedJobs(params: {
     shard: number;
     timestamp: number;
-  }): Promise<boolean> {
+  }): Promise<number> {
     try {
       const scheduledJobs =
         await this.jobScheduleRepository.getMissedSchedulesByShard(
@@ -100,10 +100,10 @@ export class JobQueueService {
           timestamp: params.timestamp,
         },
       });
-      return true;
+      return scheduledJobs.length;
     } catch (e) {
       console.log(e);
-      return false;
+      return 0;
     }
   }
 

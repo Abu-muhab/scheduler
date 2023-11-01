@@ -6,6 +6,7 @@ import { getUnixTimeStampMuniteGranularity } from 'src/job/util';
 import { Worker } from '../worker/worker';
 
 const workerCountTrend: number[] = [];
+const workerQueueDispatchCount: Map<string, number> = new Map();
 let workers: Worker[] = [];
 export const assignableShardLength = 1;
 const shardStatus: Map<number, boolean> = new Map();
@@ -171,7 +172,7 @@ export class MasterService {
 
         for (let shard of worker.shards) {
           client
-            .send<boolean>(
+            .send<number>(
               { cmd: 'queueJobs' },
               {
                 shard,
@@ -184,7 +185,11 @@ export class MasterService {
                 return of(false);
               }),
             )
-            .subscribe((_) => {});
+            .subscribe((response) => {
+              if (response) {
+                this.addWorkerQueueDispatchCount(worker.id, response as number);
+              }
+            });
         }
 
         setTimeout(() => {
@@ -218,7 +223,7 @@ export class MasterService {
 
         for (let shard of worker.shards) {
           client
-            .send<boolean>(
+            .send<number>(
               { cmd: 'requeueJobs' },
               {
                 shard,
@@ -231,7 +236,11 @@ export class MasterService {
                 return of(false);
               }),
             )
-            .subscribe((_) => {});
+            .subscribe((response) => {
+              if (response) {
+                this.addWorkerQueueDispatchCount(worker.id, response as number);
+              }
+            });
         }
 
         setTimeout(() => {
@@ -252,5 +261,14 @@ export class MasterService {
 
   getWorkerCountTrend(): number[] {
     return workerCountTrend;
+  }
+
+  addWorkerQueueDispatchCount(workerId: string, value: number) {
+    const count = workerQueueDispatchCount.get(workerId) || 0;
+    workerQueueDispatchCount.set(workerId, count + value);
+  }
+
+  getQueueDispatchCount(workerId: string): number {
+    return workerQueueDispatchCount.get(workerId) || 0;
   }
 }

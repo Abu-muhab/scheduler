@@ -2,6 +2,8 @@ export interface Worker {
   id: string;
   lastHeartbeat: String;
   uptime: string;
+  queueDispatchCount: number;
+  shards: number[];
 }
 
 class WorkersRepository {

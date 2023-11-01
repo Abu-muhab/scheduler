@@ -36,7 +36,12 @@ export class MasterController {
     const workers = await this.masterService.getWorkers();
 
     return {
-      workers: workers.map(WorkerDto.fromDomain),
+      workers: workers.map((worker) => {
+        return WorkerDto.fromDomain(
+          worker,
+          this.masterService.getQueueDispatchCount(worker.id),
+        );
+      }),
       workerCountTrend: this.masterService.getWorkerCountTrend(),
     };
   }
