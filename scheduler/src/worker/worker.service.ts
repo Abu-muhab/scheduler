@@ -82,7 +82,7 @@ export class WorkerService {
         const response: Observable<boolean> = this.client.send<boolean>(
           { cmd: 'registerWorker' },
           {
-            id: workerId,
+            workerId: workerId,
           },
         );
 
@@ -112,7 +112,7 @@ export class WorkerService {
         const response: Observable<boolean> = this.client.send<boolean>(
           { cmd: 'heartbeat' },
           {
-            id: workerId,
+            workerId: workerId,
           },
         );
 

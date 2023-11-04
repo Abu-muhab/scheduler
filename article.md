@@ -26,7 +26,9 @@ In this section, we will outline the fundamental requirements that are crucial f
 
 ## System Architecture
 
-insert-digram-here
+<div style="text-align:center">
+  <img src="https://firebasestorage.googleapis.com/v0/b/abumuhab.appspot.com/o/scheduler%2Farticle%2FUntitled%20Diagram.drawio.png?alt=media&token=c0a1f6c0-2461-447a-a1be-924104393bea&_gl=1*4md5be*_ga*MjEwNTM4NjY0Ni4xNjc4OTUwMTYy*_ga_CW55HF8NVT*MTY5OTExOTU5MC4yNC4xLjE2OTkxMjA0NjUuNTkuMC4w" alt="System Architecture" width="70%">
+</div>
 
 - Scheduling service: The scheduling service exposes an API that allows users to create, delete, and query jobs. The scheduling service is also responsible for pushing due jobs to the queue in a timely manner.
 
@@ -121,11 +123,34 @@ The shard assignment is done randomly for each job schedule during job creation,
 
 It's worth noting that although we're employing this specific tech stack, you have the flexibility to choose any stack that suits your requirements. The concepts and ideas presented in this article are not tied to any particular technology stack.
 
-Additionally, I want to emphasize that I won't delve into the implementation of certain low-level infrastructure components. Instead, we'll be using high-level abstractions specific to our implementation. Rest assured, the final code will encompass all the necessary infrastructure components. This approach allows us to focus on the core concepts of the system.
+Additionally, I want to emphasize that I won't delve into the implementation of certain low-level infrastructure components. Instead, we'll be using high-level abstractions specific to our implementation. Rest assured, the final code will encompass all the necessary infrastructure components. This approach allows us to focus on the core concepts of the system. The completed code can be accessed [here](https://github.com/Abu-muhab/scheduler)
 
-Lastly, it's important to mention that this article assumes readers' familiarity with these technologies, and as a result, we'll skip trivial setup details.
+Lastly, it's important to mention that this article assumes readers' familiarity with these technologies, and as a result, we'll skip some setup details.
 
 Let's get started.
+
+### Starter files
+
+You do not need to actively code along with the content of this article. The primary focus of this article is to provide a high-level code overview of the system and its various components. However, if you wish to follow along and work on the code, you can access the starter files by clicking [here](https://firebasestorage.googleapis.com/v0/b/abumuhab.appspot.com/o/scheduler%2Farticle%2Fdistributed_scheduler.zip?alt=media&token=d3af6c34-7b96-485f-b31d-8495b8d5b2dd&_gl=1*tbulzo*_ga*MjEwNTM4NjY0Ni4xNjc4OTUwMTYy*_ga_CW55HF8NVT*MTY5OTExOTU5MC4yNC4xLjE2OTkxMTk2NTAuNjAuMC4w).
+
+The starter files include the following components:
+
+1. **env.example**: This file contains the essential environment variables required for the application to function. To use it, simply make a copy of this file and rename it to ".env". The values in this file are already pre-filled, but you can modify them according to your specific needs.
+
+2. **docker-compose.yml**: This file comprises the Docker Compose configuration for the application. It defines the following services:
+
+   - **mongodb**: This service is responsible for running the MongoDB database.
+   - **rabbitmq**: This service is responsible for operating the RabbitMQ server.
+   - **scheduler**: This service manages the scheduling functionality.
+   - **worker**: This service handles worker tasks. The Docker Compose file instantiates six instances of the worker service. You can adjust this number to match your requirements.
+
+3. **package.json**: Within this file, you'll find a `start` script that is used to launch the application. To run the application, execute the following command in your terminal:
+
+   ```bash
+   npm start
+   ```
+
+Feel free to refer to the starter files and explore the code as you see fit, but it's not necessary to follow along with the code while reading this article.
 
 ### Creating the NestJS application
 
@@ -160,6 +185,24 @@ nest g controller master
 nest g service master
 nest g controller worker
 nest g service worker
+```
+
+### Dockerfile setup
+
+```dockerfile
+# src/Dockerfile
+
+FROM node:19 AS deps
+WORKDIR /app
+COPY package.json .
+RUN npm install
+FROM node:19 AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build && npm cache clean --force
+EXPOSE 3000
+CMD ["npm" ,"run","start:dev"]
 ```
 
 ### Master and Worker microservice setup
@@ -666,7 +709,7 @@ export class ScheduledJob {
   }
 ```
 
-Note: The above classes have been condensed to include only what is relevant to this article. I have omitted certain validations and other methods that are not pertinent to the scope of this article. For a comprehensive understanding, you can refer to the complete code for more details.
+Note: The above classes have been condensed to include only what is relevant to this article. I have omitted certain validations and other methods that are not pertinent to the scope of this article. For a comprehensive understanding, you can refer to the [complete code](https://github.com/Abu-muhab/scheduler) for more details.
 
 #### Job and Scheduled job Repository
 
@@ -701,6 +744,108 @@ While we don't delve deeply into the nitty-gritty of implementing these classes,
 ```sql
 SELECT * FROM scheduled_jobs WHERE next_execution <= 1679190400 AND shard = 1 AND queued = false;
 ```
+
+### Job service and controller
+
+```typescript
+// src/job/job.service.ts
+@Injectable()
+export class JobService {
+  constructor(
+    private jobRepository: JobRepository,
+    private jobScheduleRepository: ScheduledJobRepository,
+  ) {}
+
+  async createJob(params: {
+    jobType: string;
+    interval: number;
+    scheduledTime?: Date;
+    data: {
+      name: string;
+      data: any;
+    };
+  }): Promise<Job> {
+    let jobType = JobType.fromString(params.jobType);
+    if (jobType == JobType.ONE_TIME && !params.scheduledTime) {
+      throw new RequiredPropertyException('scheduledTime');
+    }
+    if (!params.data) {
+      throw new RequiredPropertyException('data');
+    }
+
+    const job = new Job({
+      jobType: jobType,
+      interval: params.interval,
+      id: randomUUID(),
+      scheduledTime: params.scheduledTime,
+      data: new JobData({
+        name: params.data.name,
+        data: params.data.data,
+      }),
+    });
+    await this.jobRepository.add(job);
+
+    if (jobType == JobType.RECURRING) {
+      const jobSchedule = new ScheduledJob({
+        jobId: job.id,
+        nextExecution: getUnixTimeStampMuniteGranularity(
+          new Date(Date.now() + params.interval * 1000),
+        ),
+        id: randomUUID(),
+      });
+      await this.jobScheduleRepository.add(jobSchedule);
+    } else {
+      const jobSchedule = new ScheduledJob({
+        jobId: job.id,
+        nextExecution: getUnixTimeStampMuniteGranularity(
+          convertToServerTimeZone(new Date(params.scheduledTime)),
+        ),
+        id: randomUUID(),
+      });
+      await this.jobScheduleRepository.add(jobSchedule);
+    }
+    return job;
+  }
+
+  async markScheduledJobAsQueued(jobId: string): Promise<void> {
+    const scheduledJob = await this.jobScheduleRepository.findById(jobId);
+    scheduledJob.markAsQueued();
+    await this.jobScheduleRepository.update(scheduledJob);
+  }
+}
+```
+
+`createJob`: This method is responsible for creating a new job. It accepts four essential parameters: the job type, the interval, the scheduled time, and the job data. The job type can be either recurring or one-time. The interval is the time in seconds between each execution of the job. The scheduled time is the time at which the job is scheduled to run. The job data is a JSON object that contains the name and data of the job. After creating the job, the method adds it to the job repository. If the job type is recurring, it also creates a new scheduled job and adds it to the scheduled job repository. If the job type is one-time, it creates a new scheduled job with the scheduled time and adds it to the scheduled job repository.
+
+`markScheduledJobAsQueued`: This method is responsible for marking a scheduled job as queued. It accepts a single parameter: the job id. It retrieves the scheduled job from the scheduled job repository and marks it as queued. It then updates the scheduled job in the scheduled job repository.
+
+The controller exposes an API that allows clients to create jobs.
+
+```typescript
+export class JobController {
+  constructor(private jobService: JobService) {}
+  @Post()
+  async createJob(@Body() request: CreateJobRequest): Promise<JobDto> {
+    const job = await this.jobService.createJob({
+      jobType: request.jobType,
+      interval: request.interval,
+      scheduledTime: request.scheduledTime,
+      data: {
+        name: request.data.name,
+        data: request.data.data,
+      },
+    });
+    return JobDto.fromDomain(job);
+  }
+  //.. other methods delete, get all and get by id
+}
+```
+
+This snippet provides only a glimpse of the controller. The full code includes extra functions for job deletion, retrieving all jobs, and fetching jobs by their respective IDs. Furthermore, it features a Swagger documentation that documents each accessible API for clients.
+
+ <div style="text-align:center">
+  <img src="https://firebasestorage.googleapis.com/v0/b/abumuhab.appspot.com/o/scheduler%2Farticle%2FScreenshot%202023-11-04%20at%2019.30.20.png?alt=media&token=0bb0461d-5bb4-458b-b986-8abf3422a0ea&_gl=1*of6oig*_ga*MjEwNTM4NjY0Ni4xNjc4OTUwMTYy*_ga_CW55HF8NVT*MTY5OTExOTU5MC4yNC4xLjE2OTkxMjI2OTMuMTUuMC4w" alt="System Architecture" width="90%">
+</div>
 
 ### Worker Module
 
@@ -876,6 +1021,21 @@ export class JobQueueController {
 
 `queueJobs`: This method is responsible for processing queue commands received from the master. It accepts two parameters: the shard identifier and the current timestamp. It retrieves jobs that are due for execution and associated with the specified shard. It then proceeds to push these jobs into the queue by invoking the `queueJobs` method.
 
+### Scheduler client.
+
+Before we conclude, I would like to discuss the `scheduler-client` application included in the completed code of this article. It is a React-based UI client that enables you to monitor the status and metrics of workers in the scheduling service. Additionally, it provides access to information about created jobs and their schedules.
+
+ <div style="text-align:center">
+  <img src="https://firebasestorage.googleapis.com/v0/b/abumuhab.appspot.com/o/scheduler%2Farticle%2FScreenshot%202023-11-04%20at%2019.04.51.png?alt=media&token=74b21506-7a47-4184-86dc-db232e450f08&_gl=1*15qfmzz*_ga*MjEwNTM4NjY0Ni4xNjc4OTUwMTYy*_ga_CW55HF8NVT*MTY5OTExOTU5MC4yNC4xLjE2OTkxMjExNDMuNTEuMC4w" alt="System Architecture" width="90%">
+</div>
+
 ### Conclusion of the Scheduler Service
 
-We have now finished implementing the scheduler service. We've successfully created a distributed job scheduling system capable of managing both one-time and recurring tasks. Furthermore, the system can scale horizontally by integrating additional workers. Our next objective is to proceed with the implementation of the distributed job execution service.
+We have now finished implementing the [scheduler service](https://github.com/Abu-muhab/scheduler). We've successfully created a distributed job scheduling system capable of managing both one-time and recurring tasks. Furthermore, the system can scale horizontally by integrating additional workers. Our next objective is to proceed with the implementation of the distributed job execution service which will be covered in the next article.
+
+If you got to this point, I would like to thank you for reading this article. I hope you found it informative and useful. If you have any questions or feedback, please feel free to reach out to me on [Twitter](https://twitter.com/AbuMuhab_).
+
+references:
+
+- https://towardsdatascience.com/ace-the-system-design-interview-job-scheduling-system-b25693817950
+- https://www.redwood.com/article/distributed-job-scheduling/
