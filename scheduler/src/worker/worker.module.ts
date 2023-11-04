@@ -12,7 +12,7 @@ import {
   ScheduledJobRepository,
   ScheduledJobRepositoryImpl,
 } from '../job';
-import { JobQueueService } from './worker.service';
+import { WorkerService } from './worker.service';
 
 @Module({
   imports: [
@@ -33,7 +33,7 @@ import { JobQueueService } from './worker.service';
     RabbitMQModule.forRoot(RabbitMQModule, {
       exchanges: [
         {
-          name: 'scheduler',
+          name: 'scheduler_execution_exchange',
           type: 'direct',
         },
       ],
@@ -45,7 +45,7 @@ import { JobQueueService } from './worker.service';
   providers: [
     //services
     JobService,
-    JobQueueService,
+    WorkerService,
 
     //mappers
     JobMapper,

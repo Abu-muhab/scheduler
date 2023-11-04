@@ -17,7 +17,7 @@ let connected = false;
 export let workerId = randomUUID();
 
 @Injectable()
-export class JobQueueService {
+export class WorkerService {
   constructor(
     private jobScheduleRepository: ScheduledJobRepository,
     private jobRepository: JobRepository,
@@ -26,7 +26,7 @@ export class JobQueueService {
     @Inject('WORKER_MANAGER') private client: ClientProxy,
   ) {}
 
-  async ququeJobs(scheduledJobs: ScheduledJob[], timestamp: number) {
+  async queueJobs(scheduledJobs: ScheduledJob[], timestamp: number) {
     //push each job to queue
     for (let scheduledJob of scheduledJobs) {
       //get the job
@@ -34,7 +34,7 @@ export class JobQueueService {
 
       //queue the job
       this.amqpConnection.publish(
-        'scheduler',
+        'scheduler_execution_exchange',
         job.data.name,
         JSON.stringify(job.data.data),
       );
@@ -66,7 +66,7 @@ export class JobQueueService {
           params.timestamp,
         );
 
-      await this.ququeJobs(scheduledJobs, params.timestamp);
+      await this.queueJobs(scheduledJobs, params.timestamp);
 
       return scheduledJobs.length;
     } catch (e) {

@@ -9,7 +9,7 @@ export class MasterController {
   constructor(private readonly masterService: MasterService) {}
 
   @MessagePattern({ cmd: 'registerWorker' })
-  async registerWorker(params: { id: string }): Promise<boolean> {
+  async registerWorker(params: { workerId: string }): Promise<boolean> {
     try {
       await this.masterService.addWorker(params);
       return true;
@@ -20,7 +20,7 @@ export class MasterController {
   }
 
   @MessagePattern({ cmd: 'heartbeat' })
-  heartbeat(params: { id: string }): boolean {
+  heartbeat(params: { workerId: string }): boolean {
     try {
       return this.masterService.registerHeartbeat(params);
     } catch (err) {

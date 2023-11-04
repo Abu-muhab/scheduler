@@ -1,10 +1,10 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { JobQueueService } from './worker.service';
+import { WorkerService } from './worker.service';
 
 @Controller()
 export class JobQueueController {
-  constructor(private queueService: JobQueueService) {}
+  constructor(private queueService: WorkerService) {}
 
   @MessagePattern({ cmd: 'queueJobs' })
   async queueJobs(params: {

@@ -4,10 +4,15 @@ import { Cron } from '@nestjs/schedule';
 import { catchError, of } from 'rxjs';
 import { getUnixTimeStampMuniteGranularity } from 'src/job/util';
 import { Worker } from '../worker/worker';
+import { Mutex } from 'async-mutex';
+
+const mutex = new Mutex();
 
 const workerCountTrend: number[] = [];
 const workerQueueDispatchCount: Map<string, number> = new Map();
+
 let workers: Worker[] = [];
+let addingWorker = false;
 export const assignableShardLength = 5;
 const shardStatus: Map<number, boolean> = new Map();
 
@@ -24,41 +29,38 @@ export class MasterService {
     return workers;
   }
 
-  addWorker(params: { id: string }): Promise<Worker> {
-    return new Promise((resolve, reject) => {
-      //wait for a random time beween 200 miliseconds and 1 second
-      //to prevent multiple workers from registering at the same time
-      const waitTime = Math.floor(Math.random() * 800) + 200;
-      setTimeout(() => {
-        try {
-          if (workers.find((worker) => worker.id === params.id)) {
-            return workers.find((worker) => worker.id === params.id);
-          }
+  async addWorker(params: { workerId: string }): Promise<Worker> {
+    const release = await mutex.acquire();
 
-          const newWorker = new Worker({
-            id: params.id,
-            lastHeartbeat: new Date(),
-            connectedAt: new Date(),
-            shards: [],
-          });
+    try {
+      if (workers.find((worker) => worker.id === params.workerId)) {
+        return workers.find((worker) => worker.id === params.workerId);
+      }
 
-          workers.push(newWorker);
-          let shard = this.getNextShard();
-          this.assignShard(newWorker.id, shard);
+      const newWorker = new Worker({
+        id: params.workerId,
+        lastHeartbeat: new Date(),
+        connectedAt: new Date(),
+        shards: [],
+      });
 
-          this.updateWorkerLengthTrend();
+      workers.push(newWorker);
+      let shard = this.getNextShard();
+      this.assignShard(newWorker.id, shard);
 
-          resolve(newWorker);
-        } catch (e) {
-          console.log(e);
-          reject(e);
-        }
-      }, waitTime);
-    });
+      this.updateWorkerLengthTrend();
+
+      return newWorker;
+    } catch (e) {
+      console.log(e);
+      throw e;
+    } finally {
+      release();
+    }
   }
 
-  registerHeartbeat(params: { id: string }): boolean {
-    let worker = workers.find((worker) => worker.id === params.id);
+  registerHeartbeat(params: { workerId: string }): boolean {
+    let worker = workers.find((worker) => worker.id === params.workerId);
     if (!worker) {
       return false;
     }
