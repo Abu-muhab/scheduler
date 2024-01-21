@@ -36,7 +36,7 @@ export class WorkerService {
       this.amqpConnection.publish(
         'scheduler_execution_exchange',
         job.data.name,
-        JSON.stringify(job.data.data),
+        JSON.stringify(job.data),
       );
 
       //mark the jscheduled job as queued

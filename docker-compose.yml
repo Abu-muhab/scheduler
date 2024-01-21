@@ -54,6 +54,24 @@ services:
     networks:
       - default
 
+  email-scheduler:
+    container_name: email-scheduler
+    restart: always
+    build:
+      dockerfile: ./Dockerfile
+      context: ./email-scheduler
+    volumes:
+      - ./email-scheduler:/app
+    env_file:
+      - .env
+    depends_on:
+      - mongo
+      - rabbitmq
+    ports:
+      - 3001:3000
+    networks:
+      - default
+
   mongo:
     image: mongo
     container_name: mongo
